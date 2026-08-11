@@ -7,6 +7,9 @@ import bootcampsRouter from './router/bootcampRoute';
 
 const app = express();
 
+// Body parser
+app.use(express.json());
+
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }

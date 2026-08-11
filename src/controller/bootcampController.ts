@@ -1,6 +1,7 @@
 /** @format */
 
 import express, { Request, Response, NextFunction } from 'express';
+import BootCamp from '../models/bootcampsModel';
 
 export const getAllBootCamps = (req: Request, res: Response, next: NextFunction) => {
   res.status(200).json({ success: true, message: 'Show all Bootcamps' });
@@ -10,8 +11,15 @@ export const getBootCampById = (req: Request, res: Response, next: NextFunction)
   res.status(200).json({ success: true, message: `Show bootcamp with id ${req.params.id}` });
 };
 
-export const createBootCamp = (req: Request, res: Response, next: NextFunction) => {
-  res.status(201).json({ success: true, message: 'Create a new bootcamp' });
+// create bootcamp
+export const createBootCamp = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const bootcamp = await BootCamp.create(req.body);
+    console.log(req.body);
+    res.status(201).json({ success: true, data: bootcamp });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err });
+  }
 };
 
 export const updateBootCamp = (req: Request, res: Response, next: NextFunction) => {
