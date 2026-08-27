@@ -2,6 +2,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import { IBootCamp } from '../types/bootcampType';
 import validator from 'validator';
+import slugify from 'slugify';
 
 export interface IBootcampDocument extends IBootCamp, Document {}
 
@@ -14,7 +15,7 @@ const bootcampSchema = new Schema<IBootCamp>(
       trim: true,
       maxlength: [50, 'Name can not be more than 50 charaters'],
     },
-    // slug: { type: String, unique: true, lowercase: true },
+    slug: { type: String, unique: true, lowercase: true },
     description: {
       type: String,
       required: [true, 'Please add a description'],
@@ -92,6 +93,11 @@ const bootcampSchema = new Schema<IBootCamp>(
   },
   { timestamps: true },
 );
+
+// Create Bootcamp slug from name
+bootcampSchema.pre('save', function () {
+  this.slug = slugify(this.name, { lower: true });
+});
 
 const BootCamp = mongoose.model<IBootCamp>('BootCamp', bootcampSchema);
 export default BootCamp;
