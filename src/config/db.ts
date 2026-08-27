@@ -1,6 +1,7 @@
 /** @format */
 
 import mongoose from 'mongoose';
+import fs from 'fs';
 import 'colors';
 
 export const connectDB = async (connectionString: string): Promise<void> => {
