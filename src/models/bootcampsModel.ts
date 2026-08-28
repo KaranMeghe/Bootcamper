@@ -3,6 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 import { IBootCamp } from '../types/bootcampType';
 import validator from 'validator';
 import slugify from 'slugify';
+import geocoder from '../config/geocoder';
 
 export interface IBootcampDocument extends IBootCamp, Document {}
 
@@ -97,6 +98,25 @@ const bootcampSchema = new Schema<IBootCamp>(
 // Create Bootcamp slug from name
 bootcampSchema.pre('save', function () {
   this.slug = slugify(this.name, { lower: true });
+});
+
+// Geocode and create location field
+bootcampSchema.pre('save', async function (next) {
+  const loc = await geocoder.geocode(this.address!);
+
+  this.location = {
+    type: 'Point',
+    coordinates: [loc[0].longitude as number, loc[0].latitude as number],
+    formattedAddress: loc[0].formattedAddress,
+    street: loc[0].streetName,
+    city: loc[0].city,
+    state: loc[0].stateCode,
+    zipcode: loc[0].zipcode,
+    country: loc[0].countryCode,
+  };
+
+  // Do not save address in DB — we have formattedAddress
+  this.address = undefined as any;
 });
 
 const BootCamp = mongoose.model<IBootCamp>('BootCamp', bootcampSchema);
