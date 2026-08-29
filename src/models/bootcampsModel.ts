@@ -119,5 +119,7 @@ bootcampSchema.pre('save', async function (next) {
   this.address = undefined as any;
 });
 
+bootcampSchema.index({ location: '2dsphere' });
+
 const BootCamp = mongoose.model<IBootCamp>('BootCamp', bootcampSchema);
 export default BootCamp;
