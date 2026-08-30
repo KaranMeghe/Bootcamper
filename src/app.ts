@@ -9,6 +9,9 @@ import { globalErrorHandler } from './controller/globalErrorController';
 
 const app = express();
 
+// Restore Express 4-style query parsing (nested objects via brackets)
+app.set('query parser', 'extended');
+
 // Body parser
 app.use(express.json());
 

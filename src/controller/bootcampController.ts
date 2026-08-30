@@ -9,9 +9,28 @@ import geocoder from '../config/geocoder';
 // @desc   Get all bootcamps
 // @route  GET /api/v1/bootcamps
 // @access Public
+
 export const getAllBootCamps = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const bootcamps = await BootCamp.find();
-  res.status(200).json({ success: true, data: bootcamps });
+  // Build Query
+  // 1) Filtering
+  const queryObject = { ...req.query };
+  const excludedFields = ['page', 'sort', 'limit', 'fields'];
+  excludedFields.forEach((el) => delete queryObject[el]);
+
+  // 2) Advance Filtering
+  let queryStr = JSON.stringify(queryObject);
+  queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, (match) => `$${match}`);
+  console.log(JSON.parse(queryStr));
+
+  const query = BootCamp.find(JSON.parse(queryStr));
+
+  // Execute Query
+  const bootcamps = await query;
+  res.status(200).json({ success: true, results: bootcamps.length, data: bootcamps });
+
+  // find() method is going to return a query object, BootCamp.find(queryObject) return query object. reason we can chain other methods like where,ltq,gte etc..
+  // as soon as we await query then execute and comeback with the Document that match our query, if we do like this await BootCamp.find(queryObject); there is no way we can implement pagination , sorting and all other features.
+  // instead we have to save this part to the query:BootCamp.find(queryObject), and as soon as we change all the methods to the query that we need to only by then we await that query. we use sort,page,limit,fields and other methods that we chain to the query await BootCamp.find(queryObject);
 });
 
 // @desc   Get single bootcamp
