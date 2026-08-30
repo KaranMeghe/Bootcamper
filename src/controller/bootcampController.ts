@@ -11,26 +11,42 @@ import geocoder from '../config/geocoder';
 // @access Public
 
 export const getAllBootCamps = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  // 1A) Filtering
   // Build Query
-  // 1) Filtering
   const queryObject = { ...req.query };
   const excludedFields = ['page', 'sort', 'limit', 'fields'];
   excludedFields.forEach((el) => delete queryObject[el]);
 
-  // 2) Advance Filtering
+  // 1B) Advance Filtering
   let queryStr = JSON.stringify(queryObject);
   queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, (match) => `$${match}`);
   console.log(JSON.parse(queryStr));
 
-  const query = BootCamp.find(JSON.parse(queryStr));
+  let query = BootCamp.find(JSON.parse(queryStr));
+
+  // 2) Sort
+  let sortBy = typeof req.query.sort === 'string' ? req.query.sort : undefined;
+  sortBy = sortBy?.split(',').join(' ');
+
+  if (sortBy) {
+    query = query.sort(sortBy);
+  } else {
+    query = query.sort('-createdAt');
+  }
+
+  // 3) Field Limiting
+  let fields = typeof req.query.fields === 'string' ? req.query.fields : undefined;
+  fields = fields?.split(',').join(' ');
+
+  if (fields) {
+    query = query.select(fields);
+  } else {
+    query = query.select('-__v');
+  }
 
   // Execute Query
   const bootcamps = await query;
   res.status(200).json({ success: true, results: bootcamps.length, data: bootcamps });
-
-  // find() method is going to return a query object, BootCamp.find(queryObject) return query object. reason we can chain other methods like where,ltq,gte etc..
-  // as soon as we await query then execute and comeback with the Document that match our query, if we do like this await BootCamp.find(queryObject); there is no way we can implement pagination , sorting and all other features.
-  // instead we have to save this part to the query:BootCamp.find(queryObject), and as soon as we change all the methods to the query that we need to only by then we await that query. we use sort,page,limit,fields and other methods that we chain to the query await BootCamp.find(queryObject);
 });
 
 // @desc   Get single bootcamp
