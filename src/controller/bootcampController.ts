@@ -34,7 +34,7 @@ export const getAllBootCamps = asyncHandler(async (req: Request, res: Response, 
     query = query.sort('-createdAt');
   }
 
-  // 3) Field Limiting
+  // 3) Fields Limiting
   let fields = typeof req.query.fields === 'string' ? req.query.fields : undefined;
   fields = fields?.split(',').join(' ');
 
@@ -44,9 +44,37 @@ export const getAllBootCamps = asyncHandler(async (req: Request, res: Response, 
     query = query.select('-__v');
   }
 
+  // 4) Pagination
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 25;
+  const startIndex = (page - 1) * limit; // how many to skip before this page starts
+  const endIndex = page * limit; // the number where this page conceptually ends. (used only for comparison — NOT used in the actual database call)
+
+  // Count total matching documents (respecting filters!)
+  const total = await BootCamp.countDocuments(JSON.parse(queryStr));
+
+  // Guard: if requested page doesn't exist, stop here
+  if (req.query.page && startIndex >= total) {
+    return next(new AppError(`This page doesn't exist`, 404));
+  }
+
+  // Build pagination object for next/prev
+  const pagination: {
+    next?: { page: number; limit: number };
+    prev?: { page: number; limit: number };
+  } = {};
+
+  if (endIndex < total) {
+    pagination.next = { page: page + 1, limit };
+  }
+
+  if (startIndex > 0) {
+    pagination.prev = { page: page - 1, limit };
+  }
+
   // Execute Query
   const bootcamps = await query;
-  res.status(200).json({ success: true, results: bootcamps.length, data: bootcamps });
+  res.status(200).json({ sucess: true, count: bootcamps.length, pagination, data: bootcamps });
 });
 
 // @desc   Get single bootcamp
@@ -100,7 +128,7 @@ export const deleteBootCamp = asyncHandler(async (req: Request, res: Response, n
 });
 
 // @desc   Get bootcamps within a radius
-// @route GET /api/v1/bootcamps/radius/:zipcode/:distance
+// @route  GET /api/v1/bootcamps/radius/:zipcode/:distance
 // @access Private
 
 export const getBootcampsInRadius = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
@@ -109,7 +137,7 @@ export const getBootcampsInRadius = asyncHandler(async (req: Request, res: Respo
   const zipcodeParam = req.params.zipcode;
   const distance = Number(req.params.distance);
 
-  // Handle case where zipcode might be an array (TypeScript safety)
+  // Handle case where zipcode might be an array (TypeScript safety);
   const zipcode = Array.isArray(zipcodeParam) ? zipcodeParam[0] : zipcodeParam;
 
   // Step 2: Convert zipcode to latitude and longitude
