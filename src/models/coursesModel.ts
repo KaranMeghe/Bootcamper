@@ -2,6 +2,7 @@
 
 import mongoose, { Schema, Document } from 'mongoose';
 import { ICourse } from '../types/courseType';
+import BootCamp from './bootcampsModel';
 
 export interface ICourseDocument extends ICourse, Document {}
 
@@ -51,6 +52,46 @@ const coursesSchema = new Schema<ICourse>({
     required: true,
   },
 });
+
+// Static method to get average of course tuitions
+// coursesSchema.statics.getAverageCost = async function (bootcampId: string) {
+//   const obj = await this.aggregate([
+//     {
+//       $match: { bootcamp: bootcampId },
+//     },
+//     {
+//       $group: {
+//         _id: '$bootcamp',
+//         averageCost: { $avg: '$tuition' },
+//       },
+//     },
+//   ]);
+//   return obj[0]?.averageCost;
+// };
+
+// Call getAverageCost after save
+coursesSchema.post('save', async function () {
+  await updateBootcampAverage(this.bootcamp.toString());
+});
+
+// Call getAverageCost before remove
+coursesSchema.pre('deleteOne', async function () {
+  const bootcamp = this.getFilter().bootcamp;
+  if (bootcamp) {
+    await updateBootcampAverage(bootcamp.toString());
+  }
+});
+
+// Update the average cost of a bootcamp
+async function updateBootcampAverage(bootcampId: string) {
+  const average = await Course.aggregate([
+    { $match: { bootcamp: new mongoose.Types.ObjectId(bootcampId) } },
+    { $group: { _id: null, avgCost: { $avg: '$tuition' } } },
+  ]);
+
+  const avgCost = average[0]?.avgCost || 0;
+  await BootCamp.findByIdAndUpdate(bootcampId, { averageCost: avgCost });
+}
 
 const Course = mongoose.model<ICourse>('Course', coursesSchema);
 export default Course;
