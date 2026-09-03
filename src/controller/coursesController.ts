@@ -1,7 +1,7 @@
 /** @format */
 import { Request, Response, NextFunction } from 'express';
 import asyncHandler from '../middleware/asyncHandler';
-// import AppError from '../utils/appError';
+import { AppError } from '../utils/appError';
 import Course from '../models/coursesModel';
 import BootCamp from '../models/bootcampsModel';
 
@@ -28,4 +28,36 @@ export const getCourses = asyncHandler(async (req: Request, res: Response, next:
     count: courses.length,
     data: courses,
   });
+});
+
+// @desc   Get course by id
+// @route  GET /api/v1/courses/:id
+// @access Public
+
+export const getSingleCourse = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const course = await Course.findById(req.params.id).populate({
+    path: 'bootcamp',
+    select: 'name description',
+  });
+
+  if (!course) {
+    return next(new AppError(`Course not found`, 404));
+  }
+
+  res.status(200).json({ success: true, data: course });
+});
+
+// @desc   Create a course
+// @route  POST /api/v1/courses
+// @access Private
+
+export const createCourse = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  req.params.bootcampID && (req.body.bootcamp = req.params.bootcampID);
+  const bootcamp = await BootCamp.findById(req.body.bootcamp);
+  if (!bootcamp) {
+    return next(new AppError(`Bootcamp not found`, 404));
+  }
+
+  const course = await Course.create(req.body);
+  res.status(201).json({ success: true, data: course });
 });
