@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import asyncHandler from '../middleware/asyncHandler';
 // import AppError from '../utils/appError';
 import Course from '../models/coursesModel';
+import BootCamp from '../models/bootcampsModel';
 
 // @desc   Get all courses
 // @route  GET /api/v1/courses
@@ -15,7 +16,10 @@ export const getCourses = asyncHandler(async (req: Request, res: Response, next:
   if (req.params.bootcampID) {
     query = Course.find({ bootcamp: req.params.bootcampID });
   } else {
-    query = Course.find();
+    query = Course.find().populate({
+      path: 'bootcamp',
+      select: 'name description',
+    });
   }
 
   const courses = await query;

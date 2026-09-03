@@ -22,7 +22,7 @@ export const getAllBootCamps = asyncHandler(async (req: Request, res: Response, 
   queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, (match) => `$${match}`);
   console.log(JSON.parse(queryStr));
 
-  let query = BootCamp.find(JSON.parse(queryStr));
+  let query = BootCamp.find(JSON.parse(queryStr)).populate('courses');
 
   // 2) Sort
   let sortBy = typeof req.query.sort === 'string' ? req.query.sort : undefined;
@@ -118,11 +118,13 @@ export const updateBootCamp = asyncHandler(async (req: Request, res: Response, n
 // @access Private
 
 export const deleteBootCamp = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const bootcamp = await BootCamp.findByIdAndDelete(req.params.id);
+  const bootcamp = await BootCamp.findById(req.params.id);
 
   if (!bootcamp) {
     return next(new AppError(`Bootcamp not found with id of ${req.params.id}`, 404));
   }
+
+  await bootcamp.deleteOne();
 
   res.status(200).json({ success: true, data: {} });
 });

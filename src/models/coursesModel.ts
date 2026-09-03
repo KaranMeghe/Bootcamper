@@ -42,7 +42,7 @@ const coursesSchema = new Schema<ICourse>({
   },
   bootcamp: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Bootcamp',
+    ref: 'BootCamp',
     required: true,
   },
   user: {

@@ -92,7 +92,11 @@ const bootcampSchema = new Schema<IBootCamp>(
       default: false,
     },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
 );
 
 // Create Bootcamp slug from name
@@ -117,6 +121,19 @@ bootcampSchema.pre('save', async function (next) {
 
   // Do not save address in DB — we have formattedAddress
   this.address = undefined as any;
+});
+
+// Delete courses when a bootcamp is deleted
+bootcampSchema.pre('deleteOne', { document: true, query: false }, async function () {
+  await this.model('Course').deleteMany({ bootcamp: this._id });
+});
+
+// Reverse populate with virtuals
+bootcampSchema.virtual('courses', {
+  ref: 'Course',
+  localField: '_id',
+  foreignField: 'bootcamp',
+  justOne: false,
 });
 
 bootcampSchema.index({ location: '2dsphere' });
